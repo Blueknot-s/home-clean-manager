@@ -12,7 +12,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 600px;
+      max-width: 700px;
       background: #fff;
       padding: 24px;
       border-radius: 12px;
@@ -22,9 +22,6 @@
     h2 {
       color: #2268d3;
       text-align: center;
-    }
-    label {
-      font-weight: bold;
     }
     input, select, button {
       font-size: 1em;
@@ -63,7 +60,7 @@
       border-radius: 8px;
       padding: 12px 14px;
       margin-bottom: 10px;
-      transition: background 0.3s;
+      flex-wrap: wrap;
     }
     li.checked {
       background: #e2edff;
@@ -76,14 +73,23 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      cursor: pointer;
+      flex-grow: 1;
+      min-width: 200px;
     }
     .task-text {
       font-size: 1.05em;
+      white-space: normal;
+      flex-grow: 1;
+    }
+    .task-date {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 4px;
     }
     .task-buttons {
       display: flex;
       gap: 6px;
+      margin-left: auto;
     }
     .task-buttons button {
       font-size: 0.9em;
@@ -171,17 +177,38 @@ function addCustomTask() {
 
 function createTaskElement(text) {
   const li = document.createElement("li");
+  const taskKey = `task_${text}`;
 
   const label = document.createElement("label");
   label.className = "task-label";
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
-  checkbox.onchange = () => li.classList.toggle("checked", checkbox.checked);
+  checkbox.checked = !!localStorage.getItem(taskKey);
+  checkbox.onchange = () => {
+    const isChecked = checkbox.checked;
+    li.classList.toggle("checked", isChecked);
+    const date = new Date().toISOString().split("T")[0];
+    if (isChecked) {
+      localStorage.setItem(taskKey, date);
+      dateSpan.innerText = `✔ 마지막 청소: ${date}`;
+    } else {
+      localStorage.removeItem(taskKey);
+      dateSpan.innerText = "";
+    }
+  };
 
   const span = document.createElement("span");
   span.className = "task-text";
   span.textContent = text;
+
+  const dateSpan = document.createElement("span");
+  dateSpan.className = "task-date";
+  const savedDate = localStorage.getItem(taskKey);
+  if (savedDate) {
+    li.classList.add("checked");
+    dateSpan.innerText = `✔ 마지막 청소: ${savedDate}`;
+  }
 
   label.appendChild(checkbox);
   label.appendChild(span);
@@ -200,12 +227,20 @@ function createTaskElement(text) {
   const deleteBtn = document.createElement("button");
   deleteBtn.innerText = "🗑";
   deleteBtn.title = "삭제";
-  deleteBtn.onclick = () => li.remove();
+  deleteBtn.onclick = () => {
+    localStorage.removeItem(taskKey);
+    li.remove();
+  };
 
   btnGroup.appendChild(editBtn);
   btnGroup.appendChild(deleteBtn);
 
-  li.appendChild(label);
+  const leftWrap = document.createElement("div");
+  leftWrap.style.flex = "1";
+  leftWrap.appendChild(label);
+  leftWrap.appendChild(dateSpan);
+
+  li.appendChild(leftWrap);
   li.appendChild(btnGroup);
   taskList.appendChild(li);
 }
