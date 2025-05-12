@@ -1,0 +1,235 @@
+# Re-run after reset to save the final index.html again
+final_html_path = "/mnt/data/index.html"
+
+final_html_code = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>우리 집 청소 체크리스트</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --text: #333;
+      --card: #fff;
+      --shadow: rgba(0,0,0,0.08);
+      --button: #3a7afe;
+      --button-hover: #2f63d3;
+    }
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #f0f0f0;
+      --card: #2a2a2a;
+      --shadow: rgba(255,255,255,0.1);
+      --button: #5f9eff;
+      --button-hover: #3a7afe;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .checklist-container {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 0 10px var(--shadow);
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      color: var(--button);
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    form label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select, button {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      color: #000;
+    }
+    body.dark input, body.dark select {
+      background: #444;
+      color: #fff;
+      border: 1px solid #666;
+    }
+    button {
+      background-color: var(--button);
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: var(--button-hover);
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin: 10px 0;
+    }
+    small {
+      color: #888;
+      display: block;
+      margin-top: 4px;
+    }
+    .action-buttons button {
+      width: 48%;
+      margin-right: 2%;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 480px) {
+      .action-buttons button {
+        width: 100%;
+      }
+    }
+    .dark-toggle {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="checklist-container">
+  <div class="dark-toggle">
+    <button onclick="toggleDarkMode()" style="width:auto;">🌙 다크모드 토글</button>
+  </div>
+  <h2>우리 집 청소 체크리스트 생성기</h2>
+  <p>청소 루틴을 만들고, 완료하면 자동 저장! 다크모드까지 지원합니다.</p>
+  <form id="cleaningForm">
+    <label>주거 형태
+      <select id="type">
+        <option value="원룸">원룸</option>
+        <option value="아파트">아파트</option>
+        <option value="주택">주택</option>
+      </select>
+    </label>
+    <label>거주 인원 수
+      <input type="number" id="people" min="1" max="10" value="1" />
+    </label>
+    <label>
+      <input type="checkbox" id="pets" />
+      반려동물 있음
+    </label>
+    <button type="button" onclick="generateChecklist()">체크리스트 생성</button>
+  </form>
+  <div class="action-buttons">
+    <button onclick="showTodayTasks()">오늘 할 일만 보기</button>
+    <button onclick="copyChecklist()">복사</button>
+    <button onclick="downloadPDF()">PDF 저장</button>
+  </div>
+  <div id="result" style="margin-top: 20px;"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const cleaningIntervals = {
+  "바닥 청소": 3,
+  "화장실 청소": 7,
+  "주방 정리": 4,
+  "냉장고 정리": 30,
+  "반려동물 털 제거": 2,
+  "쓰레기통 비우기": 2,
+  "창문 청소": 90
+};
+let latestChecklist = [];
+
+function generateChecklist(filterTodayOnly = false) {
+  const people = parseInt(document.getElementById("people").value);
+  const pets = document.getElementById("pets").checked;
+  let checklistHTML = "<h3>청소 항목</h3><ul>";
+  latestChecklist = [];
+
+  function addItem(label) {
+    const key = `청소_${label}`;
+    const lastCleaned = localStorage.getItem(key);
+    let nextDateStr = "";
+    let showItem = true;
+
+    if (lastCleaned) {
+      const lastDate = new Date(lastCleaned);
+      const nextDate = new Date(lastDate);
+      nextDate.setDate(nextDate.getDate() + cleaningIntervals[label]);
+      const todayStr = new Date().toISOString().split('T')[0];
+      nextDateStr = nextDate.toISOString().split('T')[0];
+      if (filterTodayOnly && nextDateStr !== todayStr) showItem = false;
+    }
+
+    if (showItem) {
+      latestChecklist.push(`${label} - 다음 청소일: ${nextDateStr || "미정"}`);
+      checklistHTML += `<li>
+        <input type="checkbox" onchange="saveCleaningDate('${label}')" />
+        ${label}
+        ${nextDateStr ? `<small>▶ 다음 청소 예정일: ${nextDateStr}</small>` : ""}
+      </li>`;
+    }
+  }
+
+  addItem("바닥 청소");
+  addItem("화장실 청소");
+  addItem("주방 정리");
+  addItem("냉장고 정리");
+  if (pets) addItem("반려동물 털 제거");
+  if (people >= 3) addItem("쓰레기통 비우기");
+  addItem("창문 청소");
+
+  checklistHTML += "</ul>";
+  document.getElementById("result").innerHTML = checklistHTML;
+}
+
+function saveCleaningDate(task) {
+  const today = new Date().toISOString().split('T')[0];
+  localStorage.setItem(`청소_${task}`, today);
+  generateChecklist();
+}
+
+function showTodayTasks() {
+  generateChecklist(true);
+}
+
+function copyChecklist() {
+  const text = latestChecklist.join("\\n");
+  navigator.clipboard.writeText(text).then(() => {
+    alert("체크리스트가 복사되었습니다!");
+  });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  doc.text("우리 집 청소 체크리스트", 10, 10);
+  latestChecklist.forEach((item, i) => {
+    doc.text(`- ${item}`, 10, 20 + i * 8);
+  });
+  doc.save("청소체크리스트.pdf");
+}
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+}
+</script>
+</body>
+</html>
+"""
+
+with open(final_html_path, "w", encoding="utf-8") as f:
+    f.write(final_html_code)
+
+final_html_path
