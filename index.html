@@ -38,9 +38,9 @@
       margin-top: 10px;
     }
     .checkbox-group label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      display: inline-block;
+      white-space: nowrap;
+      padding: 4px 0;
       font-weight: normal;
     }
     .input-row {
@@ -49,7 +49,11 @@
       margin-top: 16px;
     }
     .input-row input {
-      flex: 1;
+      flex-grow: 2.5;
+    }
+    .input-row button {
+      flex-shrink: 0;
+      width: 100px;
     }
     .title-bar {
       background: #f0f5ff;
