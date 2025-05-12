@@ -3,104 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>우리 집 청소 체크리스트</title>
+  <title>청소 체크리스트 개선 UI</title>
   <style>
-    :root {
-      --bg: #f9f9f9;
-      --text: #333;
-      --card: #fff;
-      --shadow: rgba(0,0,0,0.08);
-      --button: #3a7afe;
-      --button-hover: #2f63d3;
-    }
-    body.dark {
-      --bg: #1e1e1e;
-      --text: #f0f0f0;
-      --card: #2a2a2a;
-      --shadow: rgba(255,255,255,0.1);
-      --button: #5f9eff;
-      --button-hover: #3a7afe;
-    }
     body {
-      background: var(--bg);
-      color: var(--text);
       font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
       padding: 20px;
-      transition: background 0.3s, color 0.3s;
+      color: #333;
     }
-    .checklist-container {
-      background: var(--card);
-      border-radius: 12px;
-      box-shadow: 0 0 10px var(--shadow);
-      padding: 20px;
+    .container {
       max-width: 600px;
       margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
     }
     h2 {
-      color: var(--button);
-      font-size: 1.5em;
-      margin-bottom: 10px;
+      color: #3a7afe;
+      font-size: 1.6em;
     }
-    form label {
-      display: block;
-      margin: 10px 0 5px;
-    }
-    input, select, button {
-      padding: 8px;
-      margin-top: 5px;
+    form label, input, select, button {
       width: 100%;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    .action-buttons button {
-      width: 48%;
-      margin-right: 2%;
-    }
-    .action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       margin-top: 10px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px;
+      background: #3a7afe;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2a5dd0;
     }
     ul {
-      padding-left: 0;
       list-style: none;
+      padding: 0;
+      margin-top: 20px;
     }
     li {
-      padding: 6px;
-      border-bottom: 1px dashed #ccc;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 12px 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fafafa;
+      transition: 0.3s;
     }
-    li.checked span.task-text {
+    li.checked {
+      background: #e4f0ff;
+    }
+    li.checked .task-text {
       text-decoration: line-through;
-      opacity: 0.6;
+      color: #888;
     }
-    .task-left {
+    label.task-label {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex-grow: 1;
+      cursor: pointer;
+    }
+    .task-text {
+      font-size: 1.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .task-buttons {
       display: flex;
-      gap: 4px;
+      gap: 5px;
     }
     .task-buttons button {
-      padding: 4px 6px;
-      font-size: 0.8em;
+      font-size: 0.9em;
+      padding: 6px 8px;
+      background: #eee;
+      color: #333;
+      border-radius: 4px;
     }
-    @media (max-width: 480px) {
-      .action-buttons button {
-        width: 100%;
-      }
+    .task-buttons button:hover {
+      background: #ddd;
+    }
+    .add-task-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .add-task-group input {
+      flex: 1;
     }
   </style>
 </head>
 <body>
-<div class="checklist-container">
+<div class="container">
   <h2>우리 집 청소 체크리스트</h2>
 
   <form id="cleaningForm">
@@ -120,80 +120,82 @@
     <button type="button" onclick="generateChecklist()">체크리스트 생성</button>
   </form>
 
-  <label style="margin-top:20px;">📝 사용자 항목 추가</label>
-  <input type="text" id="customTask" placeholder="예: 창고 정리, 커튼 세탁 등">
-  <button onclick="addCustomTask()">항목 추가</button>
-
-  <div class="action-buttons">
-    <button onclick="copyChecklist()">복사</button>
+  <div class="add-task-group">
+    <input type="text" id="customTask" placeholder="예: 창고 정리, 커튼 세탁 등">
+    <button onclick="addCustomTask()">추가</button>
   </div>
 
-  <ul id="result"></ul>
+  <ul id="taskList"></ul>
+
+  <button style="margin-top: 10px;" onclick="copyChecklist()">📋 복사</button>
 </div>
 
 <script>
-const checklist = document.getElementById("result");
-let latestChecklist = [];
+const taskList = document.getElementById("taskList");
 
 function generateChecklist() {
-  checklist.innerHTML = "";
-  latestChecklist = [];
-
+  taskList.innerHTML = "";
   const people = parseInt(document.getElementById("people").value);
   const pets = document.getElementById("pets").checked;
-
-  const tasks = ["바닥 청소", "화장실 청소", "주방 정리", "냉장고 정리", "창문 청소"];
-  if (pets) tasks.push("반려동물 털 제거");
-  if (people >= 3) tasks.push("쓰레기통 비우기");
-
-  tasks.forEach(t => addTaskToList(t, false));
+  const baseTasks = ["바닥 청소", "화장실 청소", "주방 정리", "냉장고 정리", "창문 청소"];
+  if (pets) baseTasks.push("반려동물 털 제거");
+  if (people >= 3) baseTasks.push("쓰레기통 비우기");
+  baseTasks.forEach(t => createTaskElement(t));
 }
 
 function addCustomTask() {
   const input = document.getElementById("customTask");
   const task = input.value.trim();
-  if (!task) return alert("청소 항목을 입력해주세요.");
-  addTaskToList(task, true);
+  if (!task) return alert("항목을 입력해주세요.");
+  createTaskElement(task);
   input.value = "";
 }
 
-function addTaskToList(taskText, isCustom) {
+function createTaskElement(text) {
   const li = document.createElement("li");
-  const taskId = `task-${Date.now()}-${Math.random()}`;
 
-  li.innerHTML = `
-    <div class="task-left">
-      <input type="checkbox" id="${taskId}" onchange="toggleCheck(this)">
-      <span class="task-text">${taskText}</span>
-    </div>
-    <div class="task-buttons">
-      <button onclick="editTask(this)">✏️</button>
-      <button onclick="deleteTask(this)">🗑</button>
-    </div>
-  `;
-  checklist.appendChild(li);
-  latestChecklist.push(taskText);
-}
+  const label = document.createElement("label");
+  label.className = "task-label";
 
-function toggleCheck(el) {
-  const li = el.closest("li");
-  li.classList.toggle("checked", el.checked);
-}
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.onchange = () => {
+    li.classList.toggle("checked", checkbox.checked);
+  };
 
-function deleteTask(button) {
-  const li = button.closest("li");
-  checklist.removeChild(li);
-}
+  const span = document.createElement("span");
+  span.className = "task-text";
+  span.textContent = text;
 
-function editTask(button) {
-  const li = button.closest("li");
-  const textSpan = li.querySelector(".task-text");
-  const newText = prompt("수정할 내용을 입력하세요", textSpan.textContent);
-  if (newText) textSpan.textContent = newText;
+  label.appendChild(checkbox);
+  label.appendChild(span);
+
+  const btnGroup = document.createElement("div");
+  btnGroup.className = "task-buttons";
+
+  const editBtn = document.createElement("button");
+  editBtn.innerText = "✏";
+  editBtn.title = "수정";
+  editBtn.onclick = () => {
+    const newText = prompt("수정할 내용을 입력하세요", span.textContent);
+    if (newText) span.textContent = newText;
+  };
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.innerText = "🗑";
+  deleteBtn.title = "삭제";
+  deleteBtn.onclick = () => li.remove();
+
+  btnGroup.appendChild(editBtn);
+  btnGroup.appendChild(deleteBtn);
+
+  li.appendChild(label);
+  li.appendChild(btnGroup);
+  taskList.appendChild(li);
 }
 
 function copyChecklist() {
-  const tasks = Array.from(document.querySelectorAll("#result .task-text")).map(el => el.textContent);
+  const tasks = Array.from(document.querySelectorAll(".task-text")).map(t => t.textContent);
   navigator.clipboard.writeText(tasks.join("\n")).then(() => {
     alert("체크리스트가 복사되었습니다!");
   });
