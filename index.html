@@ -7,21 +7,22 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f2f4f8;
-      color: #333;
+      background: #f4f6fa;
       padding: 20px;
+      color: #333;
     }
     .container {
-      max-width: 700px;
+      max-width: 720px;
+      margin: auto;
       background: #fff;
       padding: 24px;
       border-radius: 12px;
-      margin: auto;
-      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
     h2 {
-      color: #2268d3;
+      color: #2a6ef1;
       text-align: center;
+      margin-bottom: 20px;
     }
     input, select, button {
       font-size: 1em;
@@ -30,21 +31,33 @@
       width: 100%;
       box-sizing: border-box;
     }
-    .input-group {
-      display: flex;
-      margin-top: 16px;
-      gap: 8px;
+    label {
+      font-weight: bold;
     }
-    .input-group input {
-      flex-grow: 1;
+    .checkbox-group {
+      margin-top: 10px;
+    }
+    .checkbox-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: normal;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .input-row input {
+      flex: 1;
     }
     .title-bar {
-      background: #f0f4ff;
-      padding: 10px 14px;
+      background: #f0f5ff;
+      padding: 10px 16px;
       font-weight: bold;
-      margin-top: 30px;
+      border-left: 5px solid #2a6ef1;
       border-radius: 6px;
-      border-left: 4px solid #3a7afe;
+      margin-top: 30px;
     }
     ul {
       list-style: none;
@@ -55,31 +68,33 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #f9fafe;
-      border: 1px solid #d9e4f0;
+      border: 1px solid #dce4ef;
+      padding: 12px 16px;
       border-radius: 8px;
-      padding: 12px 14px;
       margin-bottom: 10px;
+      background: #f9fbff;
       flex-wrap: wrap;
     }
     li.checked {
-      background: #e2edff;
+      background: #e3efff;
     }
     li.checked .task-text {
       text-decoration: line-through;
-      color: #888;
+      color: #777;
     }
     .task-label {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       flex-grow: 1;
-      min-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .task-text {
       font-size: 1.05em;
-      white-space: normal;
       flex-grow: 1;
+      white-space: nowrap;
     }
     .task-date {
       font-size: 0.85em;
@@ -94,31 +109,28 @@
     .task-buttons button {
       font-size: 0.9em;
       padding: 6px 8px;
-      background: #eef1f6;
       border: none;
+      background: #eef1f6;
       border-radius: 4px;
       cursor: pointer;
     }
     .task-buttons button:hover {
       background: #dbe2ee;
     }
-    .btn-primary {
-      background: #3a7afe;
-      color: #fff;
-      font-weight: bold;
+    .btn-main {
+      background: #2a6ef1;
+      color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      margin-top: 20px;
+      margin-top: 16px;
     }
-    .btn-primary:hover {
-      background: #2f63d3;
+    .btn-main:hover {
+      background: #1f5ee0;
     }
     .btn-copy {
       margin-top: 20px;
-      background: #f2f2f2;
-      border: none;
-      width: 100%;
+      background: #f0f0f0;
     }
   </style>
 </head>
@@ -134,17 +146,16 @@
   </select>
 
   <label>거주 인원 수</label>
-  <input type="number" id="people" min="1" value="1" />
+  <input type="number" id="people" value="1" min="1" />
 
-  <label style="margin-top:10px;">
-    <input type="checkbox" id="pets" />
-    반려동물 있음
-  </label>
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="pets" /> 반려동물 있음</label>
+  </div>
 
-  <button class="btn-primary" onclick="generateChecklist()">체크리스트 생성</button>
+  <button class="btn-main" onclick="generateChecklist()">체크리스트 생성</button>
 
-  <div class="input-group">
-    <input type="text" id="customTask" placeholder="예: 커튼 세탁, 베란다 정리 등" />
+  <div class="input-row">
+    <input type="text" id="customTask" placeholder="예: 베란다 정리, 커튼 세탁 등" />
     <button onclick="addCustomTask()">추가</button>
   </div>
 
@@ -188,10 +199,10 @@ function createTaskElement(text) {
   checkbox.onchange = () => {
     const isChecked = checkbox.checked;
     li.classList.toggle("checked", isChecked);
-    const date = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
     if (isChecked) {
-      localStorage.setItem(taskKey, date);
-      dateSpan.innerText = `✔ 마지막 청소: ${date}`;
+      localStorage.setItem(taskKey, today);
+      dateSpan.innerText = `✔ 마지막 청소일: ${today}`;
     } else {
       localStorage.removeItem(taskKey);
       dateSpan.innerText = "";
@@ -204,52 +215,50 @@ function createTaskElement(text) {
 
   const dateSpan = document.createElement("span");
   dateSpan.className = "task-date";
-  const savedDate = localStorage.getItem(taskKey);
-  if (savedDate) {
+  const saved = localStorage.getItem(taskKey);
+  if (saved) {
     li.classList.add("checked");
-    dateSpan.innerText = `✔ 마지막 청소: ${savedDate}`;
+    dateSpan.innerText = `✔ 마지막 청소일: ${saved}`;
   }
 
   label.appendChild(checkbox);
   label.appendChild(span);
-
-  const btnGroup = document.createElement("div");
-  btnGroup.className = "task-buttons";
-
-  const editBtn = document.createElement("button");
-  editBtn.innerText = "✏";
-  editBtn.title = "수정";
-  editBtn.onclick = () => {
-    const newText = prompt("항목 수정", span.textContent);
-    if (newText) span.textContent = newText;
-  };
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.innerText = "🗑";
-  deleteBtn.title = "삭제";
-  deleteBtn.onclick = () => {
-    localStorage.removeItem(taskKey);
-    li.remove();
-  };
-
-  btnGroup.appendChild(editBtn);
-  btnGroup.appendChild(deleteBtn);
 
   const leftWrap = document.createElement("div");
   leftWrap.style.flex = "1";
   leftWrap.appendChild(label);
   leftWrap.appendChild(dateSpan);
 
+  const buttons = document.createElement("div");
+  buttons.className = "task-buttons";
+
+  const editBtn = document.createElement("button");
+  editBtn.textContent = "✏";
+  editBtn.title = "수정";
+  editBtn.onclick = () => {
+    const newText = prompt("항목 수정", span.textContent);
+    if (newText) span.textContent = newText;
+  };
+
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "🗑";
+  delBtn.title = "삭제";
+  delBtn.onclick = () => {
+    localStorage.removeItem(taskKey);
+    li.remove();
+  };
+
+  buttons.appendChild(editBtn);
+  buttons.appendChild(delBtn);
+
   li.appendChild(leftWrap);
-  li.appendChild(btnGroup);
+  li.appendChild(buttons);
   taskList.appendChild(li);
 }
 
 function copyChecklist() {
-  const tasks = Array.from(document.querySelectorAll(".task-text")).map(el => el.textContent);
-  navigator.clipboard.writeText(tasks.join("\n")).then(() => {
-    alert("체크리스트가 복사되었습니다!");
-  });
+  const lines = Array.from(document.querySelectorAll(".task-text")).map(el => el.textContent);
+  navigator.clipboard.writeText(lines.join("\n")).then(() => alert("체크리스트가 복사되었습니다!"));
 }
 </script>
 </body>
